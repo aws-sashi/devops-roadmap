@@ -886,14 +886,4 @@ footer {
 
 }
 
-.deployment-badge {
-    display: inline-block;
-    margin: 15px 0;
-    padding: 8px 16px;
-    border-radius: 20px;
-    background: #ecfdf5;
-    color: #047857;
-    border: 1px solid #a7f3d0;
-    font-size: 14px;
-    font-weight: 600;
-}
+
