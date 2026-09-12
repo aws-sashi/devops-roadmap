@@ -1,0 +1,463 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    background: #0b1020;
+    color: #ffffff;
+    line-height: 1.6;
+}
+
+.header {
+    height: 70px;
+    padding: 0 7%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    background: rgba(11, 16, 32, 0.95);
+
+    border-bottom: 1px solid #202942;
+
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.logo {
+    font-size: 22px;
+    font-weight: bold;
+}
+
+.logo span {
+    margin-right: 8px;
+}
+
+nav {
+    display: flex;
+    gap: 30px;
+}
+
+nav a {
+    color: #b9c2d9;
+    text-decoration: none;
+}
+
+nav a:hover {
+    color: #ffffff;
+}
+
+.hero {
+    min-height: 580px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    text-align: center;
+
+    padding: 80px 20px;
+
+    background:
+        radial-gradient(circle at 50% 20%, #24386e 0, transparent 40%),
+        #0b1020;
+}
+
+.hero-content {
+    max-width: 850px;
+}
+
+.badge {
+    display: inline-block;
+
+    padding: 8px 18px;
+
+    border: 1px solid #33466f;
+
+    border-radius: 30px;
+
+    color: #9eb5ff;
+
+    margin-bottom: 25px;
+}
+
+.hero h1 {
+    font-size: clamp(45px, 7vw, 80px);
+    line-height: 1.1;
+
+    margin-bottom: 25px;
+}
+
+.hero h1 span {
+    display: block;
+    color: #6d8cff;
+}
+
+.hero p {
+    max-width: 700px;
+    margin: auto;
+
+    font-size: 19px;
+
+    color: #aeb8d0;
+}
+
+.hero-button {
+    display: inline-block;
+
+    margin-top: 35px;
+
+    padding: 14px 28px;
+
+    border-radius: 8px;
+
+    background: #617fff;
+
+    color: white;
+
+    text-decoration: none;
+
+    font-weight: bold;
+}
+
+.hero-button:hover {
+    background: #4e6df0;
+}
+
+.stats {
+    display: grid;
+
+    grid-template-columns: repeat(3, 1fr);
+
+    max-width: 900px;
+
+    margin: -45px auto 80px;
+
+    position: relative;
+
+    background: #121a30;
+
+    border: 1px solid #263252;
+
+    border-radius: 15px;
+
+    overflow: hidden;
+}
+
+.stat {
+    padding: 30px;
+
+    text-align: center;
+
+    border-right: 1px solid #263252;
+}
+
+.stat:last-child {
+    border-right: none;
+}
+
+.stat h2 {
+    font-size: 34px;
+
+    color: #7e97ff;
+}
+
+.stat p {
+    color: #9ca8c1;
+}
+
+.roadmap-section {
+    max-width: 1100px;
+
+    margin: auto;
+
+    padding: 50px 20px 100px;
+}
+
+.section-title {
+    text-align: center;
+
+    margin-bottom: 60px;
+}
+
+.section-title span {
+    color: #7e97ff;
+
+    font-size: 13px;
+
+    font-weight: bold;
+
+    letter-spacing: 2px;
+}
+
+.section-title h2 {
+    font-size: 45px;
+
+    margin: 10px 0;
+}
+
+.section-title p {
+    color: #9ca8c1;
+}
+
+.roadmap-container {
+    position: relative;
+}
+
+.roadmap-container::before {
+    content: "";
+
+    position: absolute;
+
+    left: 50%;
+
+    top: 0;
+
+    bottom: 0;
+
+    width: 2px;
+
+    background: #34436a;
+
+    transform: translateX(-50%);
+}
+
+.roadmap-card {
+    width: 46%;
+
+    padding: 25px;
+
+    background: #121a30;
+
+    border: 1px solid #293657;
+
+    border-radius: 14px;
+
+    margin-bottom: 35px;
+
+    position: relative;
+
+    transition: 0.3s;
+}
+
+.roadmap-card:hover {
+    transform: translateY(-5px);
+
+    border-color: #6d8cff;
+}
+
+.roadmap-card:nth-child(odd) {
+    margin-right: auto;
+}
+
+.roadmap-card:nth-child(even) {
+    margin-left: auto;
+}
+
+.roadmap-number {
+    position: absolute;
+
+    top: 25px;
+
+    width: 45px;
+    height: 45px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: #617fff;
+
+    font-weight: bold;
+}
+
+.roadmap-card:nth-child(odd) .roadmap-number {
+    right: -73px;
+}
+
+.roadmap-card:nth-child(even) .roadmap-number {
+    left: -73px;
+}
+
+.card-header {
+    display: flex;
+
+    align-items: center;
+
+    gap: 15px;
+
+    margin-bottom: 12px;
+}
+
+.icon {
+    font-size: 35px;
+}
+
+.card-header h3 {
+    font-size: 25px;
+}
+
+.roadmap-card > p {
+    color: #9da9c3;
+
+    margin-bottom: 18px;
+}
+
+.topics {
+    display: flex;
+
+    flex-wrap: wrap;
+
+    gap: 8px;
+}
+
+.topic {
+    padding: 5px 10px;
+
+    background: #1d2945;
+
+    border-radius: 5px;
+
+    font-size: 13px;
+
+    color: #c8d2e8;
+}
+
+.about {
+    max-width: 1000px;
+
+    margin: auto;
+
+    padding: 80px 20px;
+
+    text-align: center;
+}
+
+.about h2 {
+    font-size: 38px;
+
+    margin-bottom: 15px;
+}
+
+.about > p {
+    color: #9da9c3;
+
+    margin-bottom: 40px;
+}
+
+.about-grid {
+    display: grid;
+
+    grid-template-columns: repeat(2, 1fr);
+
+    gap: 20px;
+}
+
+.about-grid > div {
+    padding: 25px;
+
+    text-align: left;
+
+    background: #121a30;
+
+    border: 1px solid #293657;
+
+    border-radius: 12px;
+}
+
+.about-grid h3 {
+    margin-bottom: 8px;
+}
+
+.about-grid p {
+    color: #9da9c3;
+}
+
+footer {
+    text-align: center;
+
+    padding: 30px;
+
+    border-top: 1px solid #202942;
+
+    color: #78849e;
+}
+
+.loading {
+    text-align: center;
+
+    padding: 50px;
+
+    color: #8fa0c4;
+}
+
+@media (max-width: 768px) {
+
+    .header {
+        padding: 0 20px;
+    }
+
+    nav {
+        gap: 15px;
+    }
+
+    .hero {
+        min-height: 500px;
+    }
+
+    .stats {
+        margin: -20px 20px 50px;
+
+        grid-template-columns: 1fr;
+    }
+
+    .stat {
+        border-right: none;
+
+        border-bottom: 1px solid #263252;
+    }
+
+    .stat:last-child {
+        border-bottom: none;
+    }
+
+    .roadmap-container::before {
+        left: 20px;
+    }
+
+    .roadmap-card,
+    .roadmap-card:nth-child(odd),
+    .roadmap-card:nth-child(even) {
+        width: calc(100% - 50px);
+
+        margin-left: 50px;
+
+        margin-right: 0;
+    }
+
+    .roadmap-card:nth-child(odd) .roadmap-number,
+    .roadmap-card:nth-child(even) .roadmap-number {
+        left: -72px;
+
+        right: auto;
+    }
+
+    .about-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .section-title h2 {
+        font-size: 35px;
+    }
+}
