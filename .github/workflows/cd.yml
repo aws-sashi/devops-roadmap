@@ -1,0 +1,41 @@
+name: DevOps Roadmap CD
+
+on:
+  workflow_run:
+    workflows: ["DevOps Roadmap CI"]
+    types:
+      - completed
+
+jobs:
+  deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to AWS EC2
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            set -e
+
+            cd ~/devops-roadmap
+
+            echo "Pulling latest code..."
+            git pull origin main
+
+            echo "Building Docker containers..."
+            docker compose build
+
+            echo "Starting containers..."
+            docker compose up -d
+
+            echo "Checking containers..."
+            docker compose ps
+
+            echo "Checking application..."
+            curl -f http://127.0.0.1:8080/health
+
+            echo "Deployment successful!"
