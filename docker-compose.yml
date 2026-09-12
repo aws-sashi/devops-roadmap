@@ -1,5 +1,38 @@
 services:
 
+  mysql:
+    image: mysql:8.4
+    container_name: devops-roadmap-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ChangeThisRootPassword123!
+      MYSQL_DATABASE: devops_roadmap
+      MYSQL_USER: devops
+      MYSQL_PASSWORD: ChangeThisDBPassword123!
+    volumes:
+      - mysql-data:/var/lib/mysql
+    restart: unless-stopped
+
+
+  backend:
+    build:
+      context: ./backend
+    container_name: devops-roadmap-backend
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: devops_roadmap
+      DB_USER: devops
+      DB_PASSWORD: ChangeThisDBPassword123!
+      ADMIN_USER: admin
+      ADMIN_PASSWORD: ChangeThisAdminPassword123!
+      JWT_SECRET: ChangeThisJWTSecretToARandomLongValue123456789
+    expose:
+      - "3000"
+    depends_on:
+      - mysql
+    restart: unless-stopped
+
+
   frontend:
     build:
       context: ./frontend
@@ -10,15 +43,7 @@ services:
       - backend
     restart: unless-stopped
 
-  backend:
-    build:
-      context: ./backend
-    container_name: devops-roadmap-backend
-    expose:
-      - "3000"
-    volumes:
-      - inquiry-data:/app/data
-    restart: unless-stopped
 
 volumes:
-  inquiry-data:
+
+  mysql-data:

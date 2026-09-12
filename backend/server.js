@@ -1,14 +1,24 @@
 const express = require("express");
 const cors = require("cors");
-const fs = require("fs");
-const path = require("path");
+const mysql = require("mysql2/promise");
+const jwt = require("jsonwebtoken");
 
 const app = express();
 
 const PORT = 3000;
 
-const DATA_DIR = "/app/data";
-const DATA_FILE = path.join(DATA_DIR, "inquiries.json");
+const DB_HOST = process.env.DB_HOST || "mysql";
+const DB_PORT = Number(process.env.DB_PORT || 3306);
+const DB_NAME = process.env.DB_NAME || "devops_roadmap";
+const DB_USER = process.env.DB_USER || "devops";
+const DB_PASSWORD = process.env.DB_PASSWORD || "";
+
+const ADMIN_USER = process.env.ADMIN_USER || "admin";
+const ADMIN_PASSWORD =
+    process.env.ADMIN_PASSWORD || "ChangeMe";
+
+const JWT_SECRET =
+    process.env.JWT_SECRET || "change-this-secret";
 
 
 // --------------------------------------------------
@@ -17,32 +27,168 @@ const DATA_FILE = path.join(DATA_DIR, "inquiries.json");
 
 app.use(cors());
 
-app.use(express.json({
-    limit: "1mb"
-}));
+app.use(
+    express.json({
+        limit: "1mb"
+    })
+);
 
 
 // --------------------------------------------------
-// Data Directory
+// MySQL Connection Pool
 // --------------------------------------------------
 
-if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, {
-        recursive: true
-    });
-}
+const pool = mysql.createPool({
 
-if (!fs.existsSync(DATA_FILE)) {
-    fs.writeFileSync(
-        DATA_FILE,
-        "[]",
-        "utf8"
+    host: DB_HOST,
+
+    port: DB_PORT,
+
+    user: DB_USER,
+
+    password: DB_PASSWORD,
+
+    database: DB_NAME,
+
+    waitForConnections: true,
+
+    connectionLimit: 10,
+
+    queueLimit: 0
+
+});
+
+
+// --------------------------------------------------
+// Initialize Database
+// --------------------------------------------------
+
+async function initializeDatabase() {
+
+    let retries = 20;
+
+    while (retries > 0) {
+
+        try {
+
+            const connection =
+                await pool.getConnection();
+
+            console.log(
+                "Connected to MySQL"
+            );
+
+            await connection.query(`
+
+                CREATE TABLE IF NOT EXISTS inquiries (
+
+                    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+
+                    name VARCHAR(100) NOT NULL,
+
+                    email VARCHAR(150) NOT NULL,
+
+                    phone VARCHAR(20) NOT NULL,
+
+                    course VARCHAR(100) NOT NULL,
+
+                    qualification VARCHAR(100),
+
+                    experience VARCHAR(50),
+
+                    message TEXT,
+
+                    status VARCHAR(30)
+                        NOT NULL DEFAULT 'New',
+
+                    created_at TIMESTAMP
+                        DEFAULT CURRENT_TIMESTAMP
+
+                )
+
+            `);
+
+            connection.release();
+
+            console.log(
+                "Database initialized successfully"
+            );
+
+            return;
+
+        } catch (error) {
+
+            console.log(
+                "Waiting for MySQL...",
+                error.message
+            );
+
+            retries--;
+
+            await new Promise(
+                resolve =>
+                    setTimeout(resolve, 3000)
+            );
+
+        }
+
+    }
+
+    throw new Error(
+        "Unable to connect to MySQL"
     );
+
 }
 
 
 // --------------------------------------------------
-// Roadmap Data
+// Health Check
+// --------------------------------------------------
+
+app.get(
+    "/api/health",
+    async (req, res) => {
+
+        try {
+
+            await pool.query(
+                "SELECT 1"
+            );
+
+            res.json({
+
+                status: "UP",
+
+                service:
+                    "devops-roadmap-api",
+
+                database:
+                    "UP"
+
+            });
+
+        } catch (error) {
+
+            res.status(503).json({
+
+                status: "DOWN",
+
+                service:
+                    "devops-roadmap-api",
+
+                database:
+                    "DOWN"
+
+            });
+
+        }
+
+    }
+);
+
+
+// --------------------------------------------------
+// Roadmap
 // --------------------------------------------------
 
 const roadmap = [
@@ -52,10 +198,10 @@ const roadmap = [
         title: "Linux",
         icon: "🐧",
         description:
-            "Learn Linux fundamentals, system administration and shell scripting.",
+            "Linux fundamentals, administration and shell scripting.",
         topics: [
             "Linux Commands",
-            "File Permissions",
+            "Permissions",
             "Users & Groups",
             "Processes",
             "Systemd",
@@ -68,9 +214,9 @@ const roadmap = [
         title: "Git & GitHub",
         icon: "🔀",
         description:
-            "Learn version control and professional Git workflows.",
+            "Version control and professional Git workflows.",
         topics: [
-            "Git Basics",
+            "Git",
             "Branches",
             "Merge",
             "Rebase",
@@ -84,7 +230,7 @@ const roadmap = [
         title: "Networking",
         icon: "🌐",
         description:
-            "Understand networking concepts required for DevOps engineers.",
+            "Networking fundamentals required for DevOps.",
         topics: [
             "TCP/IP",
             "DNS",
@@ -100,15 +246,13 @@ const roadmap = [
         title: "AWS Cloud",
         icon: "☁️",
         description:
-            "Learn AWS cloud infrastructure and production services.",
+            "Learn AWS cloud infrastructure and services.",
         topics: [
             "EC2",
             "VPC",
             "IAM",
             "S3",
             "RDS",
-            "CloudWatch",
-            "Route53",
             "EKS"
         ]
     },
@@ -118,15 +262,14 @@ const roadmap = [
         title: "Docker",
         icon: "🐳",
         description:
-            "Containerize applications and manage container environments.",
+            "Containerization and Docker management.",
         topics: [
             "Images",
             "Containers",
             "Dockerfile",
             "Volumes",
             "Networks",
-            "Docker Compose",
-            "Registry"
+            "Compose"
         ]
     },
 
@@ -135,16 +278,14 @@ const roadmap = [
         title: "Kubernetes",
         icon: "☸️",
         description:
-            "Deploy and manage containerized applications using Kubernetes.",
+            "Deploy and manage applications with Kubernetes.",
         topics: [
             "Pods",
             "Deployments",
             "Services",
             "ConfigMaps",
             "Secrets",
-            "Ingress",
-            "HPA",
-            "Namespaces"
+            "Ingress"
         ]
     },
 
@@ -153,13 +294,13 @@ const roadmap = [
         title: "CI/CD",
         icon: "🚀",
         description:
-            "Automate application build, testing and deployment.",
+            "Automated build, testing and deployment.",
         topics: [
             "Jenkins",
             "GitHub Actions",
             "GitLab CI",
-            "Build Pipeline",
-            "Deployment",
+            "Build",
+            "Deploy",
             "Rollback"
         ]
     },
@@ -169,14 +310,14 @@ const roadmap = [
         title: "Terraform",
         icon: "🏗️",
         description:
-            "Manage cloud infrastructure using Infrastructure as Code.",
+            "Infrastructure as Code.",
         topics: [
             "Providers",
             "Resources",
             "Variables",
             "Modules",
             "State",
-            "Remote Backend"
+            "Backend"
         ]
     },
 
@@ -185,14 +326,13 @@ const roadmap = [
         title: "Ansible",
         icon: "⚙️",
         description:
-            "Automate server configuration and application deployment.",
+            "Configuration management and automation.",
         topics: [
             "Inventory",
             "Playbooks",
             "Roles",
             "Variables",
-            "Handlers",
-            "Automation"
+            "Handlers"
         ]
     },
 
@@ -201,14 +341,13 @@ const roadmap = [
         title: "Monitoring",
         icon: "📊",
         description:
-            "Monitor infrastructure, applications and containers.",
+            "Infrastructure and application monitoring.",
         topics: [
             "Prometheus",
             "Grafana",
             "Node Exporter",
             "Logs",
-            "Alerts",
-            "Dashboards"
+            "Alerts"
         ]
     },
 
@@ -217,14 +356,13 @@ const roadmap = [
         title: "DevOps Security",
         icon: "🔐",
         description:
-            "Secure cloud infrastructure and application environments.",
+            "Secure infrastructure and applications.",
         topics: [
             "IAM",
             "Secrets",
             "TLS/SSL",
             "Security Scanning",
-            "Container Security",
-            "Network Security"
+            "Container Security"
         ]
     },
 
@@ -233,261 +371,567 @@ const roadmap = [
         title: "DevSecOps",
         icon: "🛡️",
         description:
-            "Integrate security into the complete software delivery lifecycle.",
+            "Integrate security into CI/CD.",
         topics: [
             "SAST",
             "DAST",
             "Dependency Scanning",
             "Container Scanning",
-            "Security Gates",
-            "Compliance"
+            "Security Gates"
         ]
     }
 
 ];
 
 
-// --------------------------------------------------
-// Health API
-// --------------------------------------------------
+app.get(
+    "/api/roadmap",
+    (req, res) => {
 
-app.get("/api/health", (req, res) => {
+        res.json(roadmap);
 
-    res.status(200).json({
-        status: "UP",
-        service: "devops-roadmap-api"
-    });
-
-});
+    }
+);
 
 
 // --------------------------------------------------
-// Roadmap API
+// Submit Inquiry
 // --------------------------------------------------
 
-app.get("/api/roadmap", (req, res) => {
+app.post(
+    "/api/inquiries",
+    async (req, res) => {
 
-    res.status(200).json(roadmap);
+        try {
 
-});
-
-
-// --------------------------------------------------
-// Submit Admission Inquiry
-// --------------------------------------------------
-
-app.post("/api/inquiries", (req, res) => {
-
-    try {
-
-        const {
-            name,
-            email,
-            phone,
-            course,
-            qualification,
-            experience,
-            message
-        } = req.body;
-
-
-        // Required fields
-
-        if (
-            !name ||
-            !email ||
-            !phone ||
-            !course
-        ) {
-
-            return res.status(400).json({
-
-                success: false,
-
-                message:
-                    "Name, email, phone and course are required."
-
-            });
-
-        }
-
-
-        // Email validation
-
-        const emailRegex =
-            /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-
-        if (!emailRegex.test(email)) {
-
-            return res.status(400).json({
-
-                success: false,
-
-                message:
-                    "Please enter a valid email address."
-
-            });
-
-        }
-
-
-        // Phone validation
-
-        const phoneRegex =
-            /^[0-9+\-\s]{10,15}$/;
-
-
-        if (!phoneRegex.test(phone)) {
-
-            return res.status(400).json({
-
-                success: false,
-
-                message:
-                    "Please enter a valid mobile number."
-
-            });
-
-        }
-
-
-        // Create inquiry
-
-        const inquiry = {
-
-            id: Date.now(),
-
-            name: String(name).trim(),
-
-            email: String(email).trim(),
-
-            phone: String(phone).trim(),
-
-            course: String(course).trim(),
-
-            qualification:
-                qualification
-                    ? String(qualification).trim()
-                    : "",
-
-            experience:
-                experience
-                    ? String(experience).trim()
-                    : "",
-
-            message:
+            const {
+                name,
+                email,
+                phone,
+                course,
+                qualification,
+                experience,
                 message
-                    ? String(message).trim()
-                    : "",
-
-            status: "New",
-
-            createdAt:
-                new Date().toISOString()
-
-        };
+            } = req.body;
 
 
-        // Read existing inquiries
+            if (
+                !name ||
+                !email ||
+                !phone ||
+                !course
+            ) {
 
-        const inquiries =
-            JSON.parse(
-                fs.readFileSync(
-                    DATA_FILE,
-                    "utf8"
+                return res.status(400).json({
+
+                    success: false,
+
+                    message:
+                        "Name, email, phone and course are required."
+
+                });
+
+            }
+
+
+            const emailRegex =
+                /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+
+            if (!emailRegex.test(email)) {
+
+                return res.status(400).json({
+
+                    success: false,
+
+                    message:
+                        "Please enter a valid email address."
+
+                });
+
+            }
+
+
+            const phoneRegex =
+                /^[0-9+\-\s]{10,15}$/;
+
+
+            if (!phoneRegex.test(phone)) {
+
+                return res.status(400).json({
+
+                    success: false,
+
+                    message:
+                        "Please enter a valid mobile number."
+
+                });
+
+            }
+
+
+            await pool.execute(
+
+                `
+
+                INSERT INTO inquiries
+
+                (
+                    name,
+                    email,
+                    phone,
+                    course,
+                    qualification,
+                    experience,
+                    message
                 )
+
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+
+                `,
+
+                [
+
+                    String(name).trim(),
+
+                    String(email).trim(),
+
+                    String(phone).trim(),
+
+                    String(course).trim(),
+
+                    qualification
+                        ? String(qualification).trim()
+                        : null,
+
+                    experience
+                        ? String(experience).trim()
+                        : null,
+
+                    message
+                        ? String(message).trim()
+                        : null
+
+                ]
+
             );
 
 
-        // Add new inquiry
+            res.status(201).json({
 
-        inquiries.push(inquiry);
+                success: true,
 
+                message:
+                    "Thank you! Your inquiry has been submitted successfully."
 
-        // Save data
-
-        fs.writeFileSync(
-
-            DATA_FILE,
-
-            JSON.stringify(
-                inquiries,
-                null,
-                2
-            ),
-
-            "utf8"
-
-        );
+            });
 
 
-        console.log(
-            `New inquiry received from ${inquiry.name}`
-        );
+        } catch (error) {
+
+            console.error(
+                "Inquiry error:",
+                error
+            );
 
 
-        return res.status(201).json({
+            res.status(500).json({
+
+                success: false,
+
+                message:
+                    "Unable to submit inquiry."
+
+            });
+
+        }
+
+    }
+);
+
+
+// --------------------------------------------------
+// Admin Login
+// --------------------------------------------------
+
+app.post(
+    "/api/admin/login",
+    (req, res) => {
+
+        const {
+            username,
+            password
+        } = req.body;
+
+
+        if (
+            username !== ADMIN_USER ||
+            password !== ADMIN_PASSWORD
+        ) {
+
+            return res.status(401).json({
+
+                success: false,
+
+                message:
+                    "Invalid username or password."
+
+            });
+
+        }
+
+
+        const token =
+            jwt.sign(
+
+                {
+                    username
+                },
+
+                JWT_SECRET,
+
+                {
+                    expiresIn:
+                        "8h"
+                }
+
+            );
+
+
+        res.json({
 
             success: true,
 
-            message:
-                "Thank you! Your inquiry has been submitted successfully."
+            token
 
         });
 
-
-    } catch (error) {
-
-        console.error(
-            "Inquiry submission error:",
-            error
-        );
+    }
+);
 
 
-        return res.status(500).json({
+// --------------------------------------------------
+// Admin Authentication
+// --------------------------------------------------
+
+function authenticateAdmin(
+    req,
+    res,
+    next
+) {
+
+    const header =
+        req.headers.authorization;
+
+
+    if (
+        !header ||
+        !header.startsWith("Bearer ")
+    ) {
+
+        return res.status(401).json({
 
             success: false,
 
             message:
-                "Unable to submit inquiry. Please try again later."
+                "Authentication required."
 
         });
 
     }
 
-});
+
+    const token =
+        header.substring(7);
+
+
+    try {
+
+        const decoded =
+            jwt.verify(
+                token,
+                JWT_SECRET
+            );
+
+
+        req.admin =
+            decoded;
+
+
+        next();
+
+
+    } catch (error) {
+
+        return res.status(401).json({
+
+            success: false,
+
+            message:
+                "Invalid or expired token."
+
+        });
+
+    }
+
+}
 
 
 // --------------------------------------------------
-// 404
+// Admin - Get All Inquiries
 // --------------------------------------------------
 
-app.use((req, res) => {
+app.get(
+    "/api/admin/inquiries",
+    authenticateAdmin,
+    async (req, res) => {
 
-    res.status(404).json({
+        try {
 
-        success: false,
+            const [
+                rows
+            ] = await pool.query(`
 
-        message: "API endpoint not found."
+                SELECT
 
-    });
+                    id,
 
-});
+                    name,
+
+                    email,
+
+                    phone,
+
+                    course,
+
+                    qualification,
+
+                    experience,
+
+                    message,
+
+                    status,
+
+                    created_at
+
+                FROM inquiries
+
+                ORDER BY created_at DESC
+
+            `);
 
 
-// --------------------------------------------------
-// Start Server
-// --------------------------------------------------
+            res.json({
 
-app.listen(
-    PORT,
-    "0.0.0.0",
-    () => {
+                success: true,
 
-        console.log(
-            `DevOps Roadmap API running on port ${PORT}`
-        );
+                inquiries: rows
+
+            });
+
+
+        } catch (error) {
+
+            console.error(error);
+
+
+            res.status(500).json({
+
+                success: false,
+
+                message:
+                    "Unable to load inquiries."
+
+            });
+
+        }
 
     }
 );
+
+
+// --------------------------------------------------
+// Admin - Update Inquiry Status
+// --------------------------------------------------
+
+app.patch(
+    "/api/admin/inquiries/:id/status",
+    authenticateAdmin,
+    async (req, res) => {
+
+        try {
+
+            const {
+                status
+            } = req.body;
+
+
+            const allowedStatuses = [
+
+                "New",
+
+                "Contacted",
+
+                "Interested",
+
+                "Converted",
+
+                "Rejected"
+
+            ];
+
+
+            if (
+                !allowedStatuses.includes(status)
+            ) {
+
+                return res.status(400).json({
+
+                    success: false,
+
+                    message:
+                        "Invalid status."
+
+                });
+
+            }
+
+
+            await pool.execute(
+
+                `
+
+                UPDATE inquiries
+
+                SET status = ?
+
+                WHERE id = ?
+
+                `,
+
+                [
+                    status,
+                    req.params.id
+                ]
+
+            );
+
+
+            res.json({
+
+                success: true,
+
+                message:
+                    "Inquiry status updated."
+
+            });
+
+
+        } catch (error) {
+
+            console.error(error);
+
+
+            res.status(500).json({
+
+                success: false,
+
+                message:
+                    "Unable to update status."
+
+            });
+
+        }
+
+    }
+);
+
+
+// --------------------------------------------------
+// Admin - Delete Inquiry
+// --------------------------------------------------
+
+app.delete(
+    "/api/admin/inquiries/:id",
+    authenticateAdmin,
+    async (req, res) => {
+
+        try {
+
+            await pool.execute(
+
+                `
+
+                DELETE FROM inquiries
+
+                WHERE id = ?
+
+                `,
+
+                [
+                    req.params.id
+                ]
+
+            );
+
+
+            res.json({
+
+                success: true,
+
+                message:
+                    "Inquiry deleted."
+
+            });
+
+
+        } catch (error) {
+
+            console.error(error);
+
+
+            res.status(500).json({
+
+                success: false,
+
+                message:
+                    "Unable to delete inquiry."
+
+            });
+
+        }
+
+    }
+);
+
+
+// --------------------------------------------------
+// Start
+// --------------------------------------------------
+
+initializeDatabase()
+    .then(() => {
+
+        app.listen(
+            PORT,
+            "0.0.0.0",
+            () => {
+
+                console.log(
+                    `API running on port ${PORT}`
+                );
+
+            }
+        );
+
+    })
+    .catch(error => {
+
+        console.error(
+            "Startup failed:",
+            error
+        );
+
+        process.exit(1);
+
+    });

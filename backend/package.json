@@ -1,13 +1,16 @@
 {
   "name": "devops-roadmap-api",
-  "version": "1.0.0",
-  "description": "DevOps Roadmap Admission Inquiry API",
+  "version": "2.0.0",
+  "description": "TryNewCloud DevOps Roadmap and Admission API",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
+    "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
-    "express": "^4.21.2"
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.14.4"
   }
 }

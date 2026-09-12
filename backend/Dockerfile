@@ -8,7 +8,7 @@ RUN npm install --omit=dev
 
 COPY server.js .
 
-RUN mkdir -p /app/data && chown -R node:node /app
+RUN chown -R node:node /app
 
 USER node
 
