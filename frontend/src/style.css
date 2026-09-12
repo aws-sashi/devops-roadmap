@@ -961,3 +961,33 @@ footer {
     padding: 8px 0;
     line-height: 1.5;
 }
+
+/* Syllabus visibility fix */
+.syllabus-box {
+    color: #111827 !important;
+    background: #ffffff !important;
+}
+
+.syllabus-heading {
+    color: #111827 !important;
+}
+
+.syllabus-heading span {
+    color: #2563eb !important;
+}
+
+.syllabus-heading h2 {
+    color: #111827 !important;
+}
+
+#syllabus-list {
+    color: #374151 !important;
+}
+
+#syllabus-list li {
+    color: #374151 !important;
+}
+
+.syllabus-close {
+    color: #111827 !important;
+}
