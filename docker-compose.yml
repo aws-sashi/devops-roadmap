@@ -10,11 +10,15 @@ services:
       - backend
     restart: unless-stopped
 
-
   backend:
     build:
       context: ./backend
     container_name: devops-roadmap-backend
     expose:
       - "3000"
+    volumes:
+      - inquiry-data:/app/data
     restart: unless-stopped
+
+volumes:
+  inquiry-data:
